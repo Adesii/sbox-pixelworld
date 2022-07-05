@@ -4,7 +4,7 @@ namespace Pixel;
 
 public class PixelRenderer : SceneCustomObject
 {
-	public static PixelRenderer _instance;
+	private static PixelRenderer _instance;
 	public static PixelRenderer Instance
 	{
 		get
@@ -16,48 +16,43 @@ public class PixelRenderer : SceneCustomObject
 			return _instance;
 		}
 	}
-	public static Dictionary<int, PixelLayer> Layers;
+	public Dictionary<int, PixelLayer> Layers;
 
 	public static CameraMode PlayerCam
 	{
 		get
 		{
-			var clientcam = Local.Client.Components.Get<CameraMode>();
-			if ( clientcam != null ) return clientcam;
-
-			var cam = Local.Pawn?.Components.Get<CameraMode>();
-			if ( cam != null && cam is not ProxyCameraMode )
-			{
-				cam.Enabled = false;
-				cam = new ProxyCameraMode( cam )
-				{
-					Enabled = true
-				};
-				Local.Pawn.Components.Add( cam );
-				Log.Info( "ProxyCameraMode created" );
-			}
-
-			return cam;
+			return Local.Client.Components.Get<CameraMode>() ?? Local.Pawn?.Components.Get<CameraMode>();
 		}
 	}
 
 	public static Material ScreenMaterial { get; set; } = Material.Load( "materials/screen_renderer.vmat" );
-
+	public static Material BlitMaterial { get; set; } = Material.Load( "materials/postprocess/passthrough.vmat" );
 	public PixelRenderer() : base( Map.Scene )
 	{
 		ScreenMaterial = Material.Load( "materials/screen_renderer.vmat" );
+		BlitMaterial = Material.Load( "materials/postprocess/passthrough.vmat" );
+
+		Flags.IsOpaque = false;
+		Flags.IsTranslucent = true;
 		Event.Register( this );
+	}
+
+	~PixelRenderer()
+	{
+		Event.Unregister( this );
+
+		foreach ( var item in Layers )
+		{
+			item.Value?.Dispose();
+		}
 	}
 	[Event.Frame]
 	public void UpdatePosition()
 	{
-		if ( Local.Pawn.IsValid() )
+		if ( PlayerCam != null )
 		{
-			Position = Local.Pawn.Position + Local.Pawn.Rotation.Forward * 100;
-			if ( PlayerCam is ProxyCameraMode proxy )
-			{
-				Position = proxy.RealPosition;
-			}
+			Position = PlayerCam.Position + PlayerCam.Rotation.Forward * 100;
 		}
 
 		Bounds = new( -1000 + Position, 1000 + Position );
@@ -93,21 +88,32 @@ public class PixelRenderer : SceneCustomObject
 
 	public static PixelLayer Get( int v )
 	{
-		if ( Layers == null )
-			Layers = new();
-		if ( !Layers.ContainsKey( v ) )
+		if ( Instance.Layers == null )
+			Instance.Layers = new();
+		if ( !Instance.Layers.ContainsKey( v ) )
 		{
-			Layers[v] = new PixelLayer
+			Instance.Layers[v] = new PixelLayer
 			{
 				RenderOrder = v
 			};
 		}
-		return Layers[v];
+		return Instance.Layers[v];
 	}
 
-	public void SetupMapWorld()
+	public static void SetupMapWorld()
 	{
-		var layer = Get( 0 );
+		var v = 0;
+		if ( Instance.Layers == null )
+			Instance.Layers = new();
+		if ( !Instance.Layers.ContainsKey( v ) )
+		{
+			Instance.Layers[v] = new PixelWorldLayer
+			{
+				RenderOrder = v
+			};
+		}
+
+		var layer = Instance.Layers[v];
 		layer.Settings = new()
 		{
 			IsQuantized = true,
@@ -116,12 +122,6 @@ public class PixelRenderer : SceneCustomObject
 			ScaleFactor = 32 / 3,// TODO: remove later on and put into a partial file. Is DarkBindsEvil Specific.
 			SnapFactor = 32 / 8
 		};
-
-		//layer.Scene.Delete();
-		//layer.Scene = Map.Scene;
-
-		Log.Info( "Map world setup" );
-
 	}
 	[Event.Tick]
 	public void UpdateLayers()
@@ -138,12 +138,13 @@ public class PixelRenderer : SceneCustomObject
 		}
 	}
 	public Texture LastDepth;
+
+	public static bool Rendering = false;
 	public override void RenderSceneObject()
 	{
 
-		Position = float.MinValue; // TODO: remove later on once i figure out a way to not render this inside of itself.
-
-		if ( Layers == null || Layers.Count <= 0 ) return;
+		if ( Layers == null || Layers.Count <= 0 || !RenderingEnabled ) return;
+		RenderingEnabled = false;
 
 		foreach ( var item in Layers.OrderBy( x => x.Key ) )
 		{
@@ -155,6 +156,8 @@ public class PixelRenderer : SceneCustomObject
 			layer.RenderOrder = item.Key;
 			layer.RenderLayer();
 		}
+
+		RenderingEnabled = true;
 
 
 	}

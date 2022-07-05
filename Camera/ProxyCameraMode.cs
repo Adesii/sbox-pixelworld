@@ -1,6 +1,6 @@
 namespace Pixel.Camera;
 
-public class ProxyCameraMode : CameraMode
+public partial class ProxyCameraMode : CameraMode
 {
 	public new Vector3 Position => Original.Position;
 	public new Rotation Rotation => Original.Rotation;
@@ -14,33 +14,50 @@ public class ProxyCameraMode : CameraMode
 	public new float ZNear => Original.ZNear;
 	public new float ZFar => Original.ZFar;
 
-	public Vector3 RealPosition { get; internal set; }
-
-	private CameraMode Original;
+	[Net]
+	private CameraMode Original { get; set; }
 
 	private CameraSetup originalSetup;
 
-	public ProxyCameraMode( CameraMode cam ) : base()
+	public Vector3 RealPosition { get; internal set; }
+
+
+	public ProxyCameraMode()
 	{
-		this.Original = cam;
-
 		originalSetup = new();
-
-		cam.Enabled = false;
 	}
 
 	public override void Build( ref CameraSetup camSetup )
 	{
-		Log.Info( Position );
-		base.Build( ref originalSetup );
-		Original.Build( ref originalSetup );
+		base.Build( ref camSetup );
+		Original.Build( ref camSetup );
 
-		camSetup.Position = 100f;
-		RealPosition = camSetup.Position;
+		//originalSetup.Position = 100f;
+		//RealPosition = originalSetup.Position;
+
 	}
 
 	public override void Update()
 	{
 		Log.Info( Position );
+	}
+
+
+	public static ProxyCameraMode GetProxy<T>() where T : CameraMode, new()
+	{
+		var proxy = new ProxyCameraMode
+		{
+			Original = new T()
+		};
+		return proxy;
+	}
+
+	public static ProxyCameraMode GetProxy( CameraMode original )
+	{
+		var proxy = new ProxyCameraMode
+		{
+			Original = original
+		};
+		return proxy;
 	}
 }

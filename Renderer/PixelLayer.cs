@@ -40,7 +40,7 @@ public class PixelLayer
 		if ( Scene != null )
 			Scene.Delete();
 	}
-	private void Init()
+	protected virtual void Init()
 	{
 		Scene = new();
 		LayerGUID = Guid.NewGuid().ToString();
@@ -72,10 +72,17 @@ public class PixelLayer
 
 	}
 
+	public void Dispose()
+	{
+		if ( Scene != null )
+			Scene.Delete();
+		PixelTextures?.Dispose();
+	}
+
 	public Vector2 OffsetDelta;
 	public Vector3 OldPos;
 
-	public void RenderLayer()
+	public virtual void RenderLayer()
 	{
 		if ( PixelRenderer.ScreenMaterial == null || PixelTextures == null || !canRender || !Scene.IsValid() )
 		{
@@ -99,7 +106,7 @@ public class PixelLayer
 			Render.Attributes.SetCombo( "D_IS_QUANTIZED", true );
 			Render.Attributes.Set( "Quantization", QuantizeLUT );
 		}
-		Render.Draw.DrawScene( PixelTextures.Color, PixelTextures.Depth, Scene, Attributes, renderrect, renderpos - RenderRotation.Forward * 1400f, RenderRotation, cam.FieldOfView, cam.ZNear, cam.ZFar, cam.Ortho );
+		Render.Draw.DrawScene( PixelTextures.Color, PixelTextures.Depth, Scene, Attributes, renderrect, renderpos, RenderRotation, cam.FieldOfView, cam.ZNear, cam.ZFar, cam.Ortho );
 		Render.Draw2D.Material = PixelRenderer.ScreenMaterial;
 		Render.Draw2D.Texture = PixelTextures.Color;
 		Render.Draw2D.Color = Color.White;
@@ -108,7 +115,7 @@ public class PixelLayer
 		Render.Attributes.Clear();
 	}
 
-	public void UpdateLayer()
+	public virtual void UpdateLayer()
 	{
 		//if ( QuantizeLUT == null || !QuantizeLUT.IsLoaded )
 		QuantizeLUT = Sandbox.TextureLoader.Image.Load( FileSystem.Mounted, $"ui/pixelation/layer_{RenderOrder}_lut.png", false );
