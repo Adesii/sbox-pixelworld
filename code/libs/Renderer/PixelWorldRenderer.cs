@@ -50,9 +50,9 @@ public class PixelRenderer : SceneCustomObject
 	[Event.Frame]
 	public void UpdatePosition()
 	{
-		if ( PlayerCam != null )
+		if ( Local.Pawn.IsValid )
 		{
-			Position = PlayerCam.Position + PlayerCam.Rotation.Forward * 100;
+			Position = Local.Pawn.Position;
 		}
 
 		Bounds = new( -1000 + Position, 1000 + Position );

@@ -14,7 +14,6 @@ public partial class ProxyCameraMode : CameraMode
 	public new float ZNear => Original.ZNear;
 	public new float ZFar => Original.ZFar;
 
-	[Net]
 	private CameraMode Original { get; set; }
 
 	private CameraSetup originalSetup;
