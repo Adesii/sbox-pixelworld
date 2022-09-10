@@ -1,3 +1,5 @@
+using Sandbox;
+
 namespace Pixel;
 
 public class PixelLayer
@@ -42,7 +44,17 @@ public class PixelLayer
 	}
 	protected virtual void Init()
 	{
-		Scene = new();
+		Scene = new()
+		{
+			AmbientLightColor = Color.White * 4,
+		};
+
+		_ = new SceneLight( Scene, 1000, 1000000, Color.White * 0.5f )
+		{
+			Falloff = 0,
+			LightColor = Color.White * 0.5f
+		};
+
 		LayerGUID = Guid.NewGuid().ToString();
 		ViewChanged();
 		Attributes = new();
@@ -110,8 +122,10 @@ public class PixelLayer
 		Render.Draw2D.Material = PixelRenderer.ScreenMaterial;
 		Render.Draw2D.Texture = PixelTextures.Color;
 		Render.Draw2D.Color = Color.White;
-		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x ) * 2f) : 0, Screen.Size );
+		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x )) : 0, Screen.Size );
 		Render.Draw2D.Quad( rect.TopLeft, rect.TopRight, rect.BottomRight, rect.BottomLeft );
+
+		Log.Info( "RenderLayer" );
 		Render.Attributes.Clear();
 	}
 

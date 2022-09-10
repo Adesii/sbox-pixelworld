@@ -2,7 +2,7 @@ using Pixel.Camera;
 
 namespace Pixel;
 
-public class PixelRenderer : SceneCustomObject
+public class PixelRenderer //: SceneCustomObject
 {
 	private static PixelRenderer _instance;
 	public static PixelRenderer Instance
@@ -28,13 +28,13 @@ public class PixelRenderer : SceneCustomObject
 
 	public static Material ScreenMaterial { get; set; } = Material.Load( "materials/screen_renderer.vmat" );
 	public static Material BlitMaterial { get; set; } = Material.Load( "materials/postprocess/passthrough.vmat" );
-	public PixelRenderer() : base( Map.Scene )
+	public PixelRenderer() //: base( Map.Scene )
 	{
 		ScreenMaterial = Material.Load( "materials/screen_renderer.vmat" );
 		BlitMaterial = Material.Load( "materials/postprocess/passthrough.vmat" );
 
-		Flags.IsOpaque = false;
-		Flags.IsTranslucent = true;
+		//Flags.IsOpaque = false;
+		//Flags.IsTranslucent = true;
 		Event.Register( this );
 	}
 
@@ -47,16 +47,16 @@ public class PixelRenderer : SceneCustomObject
 			item.Value?.Dispose();
 		}
 	}
-	[Event.Frame]
+	/* [Event.Frame]
 	public void UpdatePosition()
 	{
 		if ( Local.Pawn.IsValid )
 		{
-			Position = Local.Pawn.Position;
+			Position = Local.Pawn.Position + Local.Pawn.Rotation.Forward * 1000f;
 		}
 
 		Bounds = new( -1000 + Position, 1000 + Position );
-	}
+	} */
 
 	public static SceneWorld GetDefaultWorld()
 	{
@@ -102,7 +102,7 @@ public class PixelRenderer : SceneCustomObject
 
 	public static void SetupMapWorld()
 	{
-		var v = 0;
+		var v = -1;
 		if ( Instance.Layers == null )
 			Instance.Layers = new();
 		if ( !Instance.Layers.ContainsKey( v ) )
@@ -113,20 +113,20 @@ public class PixelRenderer : SceneCustomObject
 			};
 		}
 
-		var layer = Instance.Layers[v];
-		layer.Settings = new()
+		Instance.Layers[v].Settings = new()
 		{
 			IsQuantized = true,
 			IsFullScreen = false,
 			IsPixelPerfectWithOverscan = true,
-			ScaleFactor = 32 / 3,// TODO: remove later on and put into a partial file. Is DarkBindsEvil Specific.
-			SnapFactor = 32 / 8
+			ScaleFactor = 4,// TODO: remove later on and put into a partial file. Is DarkBindsEvil Specific.
+			SnapFactor = 4
 		};
 	}
 	[Event.Tick]
 	public void UpdateLayers()
 	{
 		if ( Layers == null || Layers.Count <= 0 ) return;
+
 		foreach ( var item in Layers.OrderBy( x => x.Key ) )
 		{
 			var layer = item.Value;
@@ -139,12 +139,12 @@ public class PixelRenderer : SceneCustomObject
 	}
 	public Texture LastDepth;
 
-	public static bool Rendering = false;
-	public override void RenderSceneObject()
+	//public static bool RenderingEnabled = true;
+	public void RenderSceneObject()
 	{
+		if ( Layers == null || Layers.Count <= 0 ) return;
 
-		if ( Layers == null || Layers.Count <= 0 || !RenderingEnabled ) return;
-		RenderingEnabled = false;
+		//Log.Info( "Rendering SceneObjects" );
 
 		foreach ( var item in Layers.OrderBy( x => x.Key ) )
 		{
@@ -157,8 +157,6 @@ public class PixelRenderer : SceneCustomObject
 			layer.RenderLayer();
 		}
 
-		RenderingEnabled = true;
-
-
 	}
 }
+

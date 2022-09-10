@@ -5,9 +5,9 @@ namespace Pixel;
 public class PixelWorldLayer : PixelLayer
 {
 
-	public static bool RenderingWorld = false;
 	protected override void Init()
 	{
+		Scene = Map.Scene;
 		LayerGUID = Guid.NewGuid().ToString();
 		ViewChanged();
 		Attributes = new();
@@ -15,9 +15,10 @@ public class PixelWorldLayer : PixelLayer
 
 		IsInit = true;
 	}
+
 	public override void RenderLayer()
 	{
-		if ( PixelRenderer.ScreenMaterial == null || PixelTextures == null || !canRender )
+		if ( PixelRenderer.ScreenMaterial == null || PixelTextures == null || !canRender || !Scene.IsValid() )
 		{
 			return;
 		}
@@ -38,13 +39,13 @@ public class PixelWorldLayer : PixelLayer
 		{
 			Render.Attributes.SetCombo( "D_IS_QUANTIZED", true );
 			Render.Attributes.Set( "Quantization", QuantizeLUT );
+			Log.Info( "Quantized" );
 		}
-		//Render.Attributes.SetCombo( "D_USE_FRAMEBUFFER", false );
 		Render.Draw.DrawScene( PixelTextures.Color, PixelTextures.Depth, Map.Scene, Attributes, renderrect, renderpos, RenderRotation, cam.FieldOfView, cam.ZNear, cam.ZFar, cam.Ortho );
 		Render.Draw2D.Material = PixelRenderer.ScreenMaterial;
 		Render.Draw2D.Texture = PixelTextures.Color;
 		Render.Draw2D.Color = Color.White;
-		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x ) * 2f) : 0, Screen.Size );
+		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x )) : 0, Screen.Size );
 		Render.Draw2D.Quad( rect.TopLeft, rect.TopRight, rect.BottomRight, rect.BottomLeft );
 		Render.Attributes.Clear();
 	}
