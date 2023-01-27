@@ -1,3 +1,4 @@
+
 using SpriteKit.Player;
 
 namespace Pixel;
@@ -26,25 +27,16 @@ public class PixelRenderer //: SceneCustomObject
 		}
 	}
 
-	public static Material ScreenMaterial => Material.FromShader( "shaders/screen_sprite_renderer_layer.shader" );
+	public static Material ScreenMaterial = Material.FromShader( "shaders/screen_sprite_renderer_layer.shader" );
 	public static Material BlitMaterial { get; set; } = Material.Load( "materials/postprocess/passthrough.vmat" );
 	public PixelRenderer() //: base( Map.Scene )
 	{
+		//ScreenMaterial = Material.Load( "materials/screen_renderer.vmat" );
 		BlitMaterial = Material.Load( "materials/postprocess/passthrough.vmat" );
 
 		//Flags.IsOpaque = false;
 		//Flags.IsTranslucent = true;
 		Event.Register( this );
-	}
-
-	~PixelRenderer()
-	{
-		Event.Unregister( this );
-
-		foreach ( var item in Layers )
-		{
-			item.Value?.Dispose();
-		}
 	}
 	/* [Event.Frame]
 	public void UpdatePosition()
@@ -59,29 +51,38 @@ public class PixelRenderer //: SceneCustomObject
 
 	public static SceneWorld GetDefaultWorld()
 	{
-		var layer = Get( 0 );
+		var layer = Get( -1 );
 		if ( !layer.IsInit )
+		{
 			layer.Settings = new()
 			{
 				IsQuantized = true,
 				IsFullScreen = false,
 				IsPixelPerfectWithOverscan = true,
-				ScaleFactor = 32 / 3,// TODO: remove later on and put into a partial file. Is DarkBindsEvil Specific.
+				ScaleFactor = 32 / 4,// TODO: remove later on and put into a partial file. Is DarkBindsEvil Specific.
 				SnapFactor = 32 / 8
 
 			};
+		}
+
+
 		return layer.Scene;
 	}
 	public static SceneWorld GetDefaultCharacters()
 	{
 		var layer = Get( 1 );
 		if ( !layer.IsInit )
+		{
 			layer.Settings = new()
 			{
 				IsQuantized = false,
 				IsFullScreen = true,
 				IsPixelPerfectWithOverscan = false
 			};
+
+			layer.Scene.AmbientLightColor = Color.White * 100;
+		}
+
 		return layer.Scene;
 	}
 
@@ -99,7 +100,7 @@ public class PixelRenderer //: SceneCustomObject
 		return Instance.Layers[v];
 	}
 
-	public static void SetupMapWorld()
+	/* public static void SetupMapWorld()
 	{
 		var v = -1;
 		if ( Instance.Layers == null )
@@ -120,7 +121,7 @@ public class PixelRenderer //: SceneCustomObject
 			ScaleFactor = 4,// TODO: remove later on and put into a partial file. Is DarkBindsEvil Specific.
 			SnapFactor = 4
 		};
-	}
+	} */
 	[Event.Tick]
 	public void UpdateLayers()
 	{
@@ -156,6 +157,14 @@ public class PixelRenderer //: SceneCustomObject
 			layer.RenderLayer();
 		}
 
+	}
+
+	public static void ClearLayers()
+	{
+		foreach ( var sceneobject in GetDefaultWorld().SceneObjects )
+		{
+			sceneobject.Delete();
+		}
 	}
 }
 

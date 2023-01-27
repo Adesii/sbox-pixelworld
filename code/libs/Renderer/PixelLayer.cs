@@ -4,6 +4,8 @@ namespace Pixel;
 
 public class PixelLayer
 {
+
+	public static SceneCamera target;
 	private LayerSettings _settings;
 	public LayerSettings Settings
 	{
@@ -37,31 +39,28 @@ public class PixelLayer
 
 	public Texture QuantizeLUT { get; set; }
 
+	protected virtual void Init()
+	{
+		Scene?.Delete();
+		Scene = new()
+		{
+			AmbientLightColor = Color.Transparent,
+			ClearColor = Color.Transparent,
+
+		};
+
+		LayerGUID = Guid.NewGuid().ToString();
+		Attributes = new();
+		ViewChanged();
+		Event.Register( this );
+
+		IsInit = true;
+	}
+
 	~PixelLayer()
 	{
 		if ( Scene != null )
 			Scene.Delete();
-	}
-	protected virtual void Init()
-	{
-		Scene = new()
-		{
-			AmbientLightColor = Color.White * 4,
-		};
-
-		_ = new SceneLight( Scene, 1000, 1000000, Color.White * 0.5f )
-		{
-			QuadraticAttenuation = 0,
-			LinearAttenuation = 1,
-			LightColor = Color.White * 0.5f
-		};
-
-		LayerGUID = Guid.NewGuid().ToString();
-		ViewChanged();
-		Attributes = new();
-		Event.Register( this );
-
-		IsInit = true;
 	}
 
 	[Event.Screen.SizeChanged]
@@ -80,7 +79,7 @@ public class PixelLayer
 		if ( Settings.RenderSize.Length <= 2 ) return;
 		//PixelTextures = new( Settings.RenderSize, false );
 
-		PixelTextures = new( Settings.RenderSize, false, false, false );
+		PixelTextures = new( Settings.RenderSize );
 		canRender = true;
 
 	}
@@ -97,10 +96,7 @@ public class PixelLayer
 
 	public virtual void RenderLayer()
 	{
-		if ( PixelRenderer.ScreenMaterial == null || PixelTextures == null || !canRender || !Scene.IsValid() )
-		{
-			return;
-		}
+		var cam = PixelRenderer.PlayerCam;
 		Rect renderrect = new( 0, Settings.RenderSize );
 		var renderpos = RenderPosition;
 		if ( Settings.IsPixelPerfectWithOverscan )
@@ -118,15 +114,18 @@ public class PixelLayer
 			Graphics.Attributes.SetCombo( "D_IS_QUANTIZED", true );
 			Graphics.Attributes.Set( "Quantization", QuantizeLUT );
 		}
-		Camera.Main.World = Scene;
-		Graphics.RenderToTexture( Camera.Current, PixelTextures.Color );
+		target.World = Scene;
+		//target.AmbientLightColor = Color.Transparent;
+		target.BackgroundColor = Color.Transparent;
+		Graphics.RenderToTexture( target, PixelTextures.Color );
+		Graphics.Attributes.Set( "Texture", PixelTextures.Color );
+		Graphics.GrabFrameTexture( "FrameBufferCopyTexture", Attributes );
 		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x )) : 0, Screen.Size );
-		Graphics.DrawQuad( rect, PixelRenderer.ScreenMaterial, Color.White, Graphics.Attributes );
+		Graphics.DrawQuad( rect, PixelRenderer.ScreenMaterial, Color.White );
+		//Graphics.Blit( PixelRenderer.ScreenMaterial, Attributes );
 
-		Log.Info( "RenderLayer" );
-		Graphics.Attributes.Clear();
-
-		Camera.Main.World = Game.SceneWorld;
+		Attributes.Clear();
+		//target.World = Game.SceneWorld;
 	}
 
 	public virtual void UpdateLayer()
