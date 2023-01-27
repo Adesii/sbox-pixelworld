@@ -1,4 +1,4 @@
-using Pixel.Camera;
+using SpriteKit.Player;
 
 namespace Pixel;
 
@@ -22,15 +22,14 @@ public class PixelRenderer //: SceneCustomObject
 	{
 		get
 		{
-			return Local.Client.Components.Get<CameraMode>() ?? Local.Pawn?.Components.Get<CameraMode>();
+			return Game.LocalPawn?.Components.Get<CameraMode>();
 		}
 	}
 
-	public static Material ScreenMaterial { get; set; } = Material.Load( "materials/screen_renderer.vmat" );
+	public static Material ScreenMaterial => Material.FromShader( "shaders/screen_sprite_renderer_layer.shader" );
 	public static Material BlitMaterial { get; set; } = Material.Load( "materials/postprocess/passthrough.vmat" );
 	public PixelRenderer() //: base( Map.Scene )
 	{
-		ScreenMaterial = Material.Load( "materials/screen_renderer.vmat" );
 		BlitMaterial = Material.Load( "materials/postprocess/passthrough.vmat" );
 
 		//Flags.IsOpaque = false;
@@ -131,8 +130,8 @@ public class PixelRenderer //: SceneCustomObject
 		{
 			var layer = item.Value;
 			if ( !layer.IsInit || PlayerCam == null ) continue;
-			layer.RenderPosition = PlayerCam.Position;
-			layer.RenderRotation = PlayerCam.Rotation;
+			layer.RenderPosition = Camera.Position;
+			layer.RenderRotation = Camera.Rotation;
 			layer.RenderOrder = item.Key;
 			layer.UpdateLayer();
 		}
@@ -150,8 +149,8 @@ public class PixelRenderer //: SceneCustomObject
 		{
 			var layer = item.Value;
 			if ( !layer.IsInit ) continue;
-			layer.RenderPosition = PlayerCam.Position;
-			layer.RenderRotation = PlayerCam.Rotation;
+			layer.RenderPosition = Camera.Position;
+			layer.RenderRotation = Camera.Rotation;
 
 			layer.RenderOrder = item.Key;
 			layer.RenderLayer();

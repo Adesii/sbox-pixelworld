@@ -7,7 +7,7 @@ public class PixelWorldLayer : PixelLayer
 
 	protected override void Init()
 	{
-		Scene = Map.Scene;
+		Scene = Game.SceneWorld;
 		LayerGUID = Guid.NewGuid().ToString();
 		ViewChanged();
 		Attributes = new();
@@ -33,20 +33,22 @@ public class PixelWorldLayer : PixelLayer
 			var snappedPos = renderpos;
 			OffsetDelta = snappedPos - oldpos;
 			OldPos = snappedPos;
-			Render.Attributes.Set( "ScaleFactor", Settings.ScaleFactor );
+			Graphics.Attributes.Set( "ScaleFactor", Settings.ScaleFactor );
 		}
 		if ( Settings.IsQuantized && QuantizeLUT != null && QuantizeLUT.IsLoaded )
 		{
-			Render.Attributes.SetCombo( "D_IS_QUANTIZED", true );
-			Render.Attributes.Set( "Quantization", QuantizeLUT );
+			Graphics.Attributes.SetCombo( "D_IS_QUANTIZED", true );
+			Graphics.Attributes.Set( "Quantization", QuantizeLUT );
 			Log.Info( "Quantized" );
 		}
-		Render.Draw.DrawScene( PixelTextures.Color, PixelTextures.Depth, Map.Scene, Attributes, renderrect, renderpos, RenderRotation, cam.FieldOfView, cam.ZNear, cam.ZFar, cam.Ortho );
-		Render.Draw2D.Material = PixelRenderer.ScreenMaterial;
-		Render.Draw2D.Texture = PixelTextures.Color;
-		Render.Draw2D.Color = Color.White;
+		Camera.Main.World = Scene;
+		Graphics.RenderToTexture( Camera.Current, PixelTextures.Color );
 		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x )) : 0, Screen.Size );
-		Render.Draw2D.Quad( rect.TopLeft, rect.TopRight, rect.BottomRight, rect.BottomLeft );
-		Render.Attributes.Clear();
+		Graphics.DrawQuad( rect, PixelRenderer.ScreenMaterial, Color.White, Graphics.Attributes );
+
+		Log.Info( "RenderLayer" );
+		Graphics.Attributes.Clear();
+
+		Camera.Main.World = Game.SceneWorld;
 	}
 }

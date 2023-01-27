@@ -51,7 +51,8 @@ public class PixelLayer
 
 		_ = new SceneLight( Scene, 1000, 1000000, Color.White * 0.5f )
 		{
-			Falloff = 0,
+			QuadraticAttenuation = 0,
+			LinearAttenuation = 1,
 			LightColor = Color.White * 0.5f
 		};
 
@@ -100,7 +101,6 @@ public class PixelLayer
 		{
 			return;
 		}
-		var cam = PixelRenderer.PlayerCam;
 		Rect renderrect = new( 0, Settings.RenderSize );
 		var renderpos = RenderPosition;
 		if ( Settings.IsPixelPerfectWithOverscan )
@@ -111,28 +111,28 @@ public class PixelLayer
 			var snappedPos = renderpos;
 			OffsetDelta = snappedPos - oldpos;
 			OldPos = snappedPos;
-			Render.Attributes.Set( "ScaleFactor", Settings.ScaleFactor );
+			Graphics.Attributes.Set( "ScaleFactor", Settings.ScaleFactor );
 		}
 		if ( Settings.IsQuantized && QuantizeLUT != null && QuantizeLUT.IsLoaded )
 		{
-			Render.Attributes.SetCombo( "D_IS_QUANTIZED", true );
-			Render.Attributes.Set( "Quantization", QuantizeLUT );
+			Graphics.Attributes.SetCombo( "D_IS_QUANTIZED", true );
+			Graphics.Attributes.Set( "Quantization", QuantizeLUT );
 		}
-		Render.Draw.DrawScene( PixelTextures.Color, PixelTextures.Depth, Scene, Attributes, renderrect, renderpos, RenderRotation, cam.FieldOfView, cam.ZNear, cam.ZFar, cam.Ortho );
-		Render.Draw2D.Material = PixelRenderer.ScreenMaterial;
-		Render.Draw2D.Texture = PixelTextures.Color;
-		Render.Draw2D.Color = Color.White;
+		Camera.Main.World = Scene;
+		Graphics.RenderToTexture( Camera.Current, PixelTextures.Color );
 		Rect rect = new( Settings.IsPixelPerfectWithOverscan ? (new Vector2( OffsetDelta.y, OffsetDelta.x )) : 0, Screen.Size );
-		Render.Draw2D.Quad( rect.TopLeft, rect.TopRight, rect.BottomRight, rect.BottomLeft );
+		Graphics.DrawQuad( rect, PixelRenderer.ScreenMaterial, Color.White, Graphics.Attributes );
 
 		Log.Info( "RenderLayer" );
-		Render.Attributes.Clear();
+		Graphics.Attributes.Clear();
+
+		Camera.Main.World = Game.SceneWorld;
 	}
 
 	public virtual void UpdateLayer()
 	{
 		//if ( QuantizeLUT == null || !QuantizeLUT.IsLoaded )
-		QuantizeLUT = Sandbox.TextureLoader.Image.Load( FileSystem.Mounted, $"ui/pixelation/layer_{RenderOrder}_lut.png", false );
+		QuantizeLUT = Texture.Load( FileSystem.Mounted, $"ui/pixelation/layer_{RenderOrder}_lut.png", false );
 
 	}
 
