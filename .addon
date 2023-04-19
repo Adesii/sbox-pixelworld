@@ -1,0 +1,19 @@
+{
+  "Title": "PixelRenderer",
+  "Type": "library",
+  "Org": "adesi",
+  "Ident": "pixelrenderer",
+  "Tags": null,
+  "Schema": 1,
+  "HasAssets": true,
+  "AssetsPath": "",
+  "ResourcePaths": null,
+  "HasCode": true,
+  "CodePath": ".",
+  "PackageReferences": [],
+  "EditorReferences": null,
+  "Metadata": {
+    "ProjectTemplate": null,
+    "CsProjName": ""
+  }
+}

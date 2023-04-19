@@ -1,6 +1,8 @@
 _bakeresourcecache/
 code/Properties/
 code/obj/
+Properties/
+obj/
 .codegen/
 .intermediate
 materials/default/*
